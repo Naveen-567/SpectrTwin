@@ -119,9 +119,16 @@ The application will open in your default web browser at `http://localhost:8501`
      ```
      GROQ_API_KEY = "your_api_key_here"
      ```
-6. Update `chatbot.py` to use secrets from environment variables
+6. **Important**: After deployment, if you see `ModuleNotFoundError: No module named 'groq'`:
+   - Go to app settings → Advanced Settings
+   - Add to Python requirements:
+     ```
+     --upgrade
+     pip install groq
+     ```
+   - Or manually trigger a rerun by making a small change to the code and pushing to GitHub
 
-**Note:** Streamlit Cloud automatically installs packages from `requirements.txt`, so ensure all dependencies are listed there.
+**Note:** Streamlit Cloud automatically installs packages from `requirements.txt`. The app will work even if groq is not installed - just without the AI chatbot feature.
 
 ## Usage
 
