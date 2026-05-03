@@ -1,11 +1,19 @@
 import streamlit as st
 from groq import Groq
+import os
 
 def init_chatbot_state():
     if "messages" not in st.session_state:
         st.session_state.messages = []
     if "groq_api_key" not in st.session_state:
-        st.session_state.groq_api_key = ""
+        # Try multiple sources for API key:
+        # 1. Streamlit secrets (for Cloud deployment)
+        # 2. Environment variables
+        # 3. Default empty
+        try:
+            st.session_state.groq_api_key = st.secrets.get("GROQ_API_KEY", "")
+        except:
+            st.session_state.groq_api_key = os.getenv("GROQ_API_KEY", "")
 
 PAGE_EXPLANATIONS = {
     "Home Page": "This is the main landing page. It provides an overview of the Spectroscopy ML Pipeline, its features, and access to all modules.",
