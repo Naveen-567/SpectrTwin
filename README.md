@@ -109,26 +109,23 @@ The application will open in your default web browser at `http://localhost:8501`
 
 ### Deploy on Streamlit Cloud
 
-1. Push your repository to GitHub (already done!)
-2. Go to [Streamlit Cloud](https://streamlit.io/cloud)
-3. Click "New app" and connect your GitHub repository
-4. Select `Home.py` as the main file
-5. Set up secrets in Streamlit Cloud dashboard:
-   - Go to app settings → Secrets
-   - Add your Groq API key:
-     ```
-     GROQ_API_KEY = "your_api_key_here"
-     ```
-6. **Important**: After deployment, if you see `ModuleNotFoundError: No module named 'groq'`:
-   - Go to app settings → Advanced Settings
-   - Add to Python requirements:
-     ```
-     --upgrade
-     pip install groq
-     ```
-   - Or manually trigger a rerun by making a small change to the code and pushing to GitHub
+**Follow the complete deployment guide:** [DEPLOYMENT.md](DEPLOYMENT.md)
 
-**Note:** Streamlit Cloud automatically installs packages from `requirements.txt`. The app will work even if groq is not installed - just without the AI chatbot feature.
+**Quick Summary:**
+1. Go to [Streamlit Cloud](https://streamlit.io/cloud) and sign in with GitHub
+2. Click "New app" and select this repository
+3. Set your Groq API key in app settings → Secrets:
+   ```toml
+   GROQ_API_KEY = "your_api_key_here"
+   ```
+4. Deploy!
+
+**Common Issues:**
+- If chatbot errors occur, it will gracefully disable (app still works)
+- Ensure `GROQ_API_KEY` is set in Streamlit Cloud Secrets
+- Check deployment logs if issues persist
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed troubleshooting.
 
 ## Usage
 
