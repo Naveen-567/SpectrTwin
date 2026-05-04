@@ -9,6 +9,7 @@ import json
 import time
 import os
 import queue
+import socket
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
@@ -75,6 +76,8 @@ if "ws_thread" not in st.session_state:
     st.session_state.ws_thread = None
 if "loop" not in st.session_state:
     st.session_state.loop = None
+if "server_start_time" not in st.session_state:
+    st.session_state.server_start_time = None
 
 mq = st.session_state.rt_queue
 
@@ -200,8 +203,10 @@ with col_run:
                 obs.schedule(event_handler, folder_to_monitor, recursive=False)
                 obs.start()
                 st.session_state.observer = obs
+                st.session_state.server_start_time = time.time()
                 
                 st.success("✅ Server started successfully!")
+                st.balloons()  # Fun visual feedback
                 st.rerun()
                 
             except Exception as e:
@@ -228,16 +233,73 @@ with col_stop:
 
 # Display status
 st.write("---")
-st.subheader("📊 Server Status")
+st.subheader("📊 Server Status & Connection Details")
 
 if st.session_state.observer is not None:
-    st.success(f"🟢 **Server Running!**")
-    st.info(f"""
-    📂 **Monitoring**: `{st.session_state.watch_folder}`
-    🔌 **WebSocket Port**: {port}
-    👥 **Connection URL**: `ws://YOUR_SERVER_IP:{port}`
+    # Get local IP for easy access
+    try:
+        hostname = socket.gethostname()
+        local_ip = socket.gethostbyname(hostname)
+    except:
+        local_ip = "127.0.0.1"
     
-    ℹ️ The server will automatically process new `.csv`, `.txt`, `.xlsx`, or `.spa` files.
+    # Calculate uptime
+    uptime_seconds = int(time.time() - st.session_state.server_start_time) if st.session_state.server_start_time else 0
+    uptime_minutes = uptime_seconds // 60
+    uptime_text = f"{uptime_minutes}m {uptime_seconds % 60}s" if uptime_minutes > 0 else f"{uptime_seconds}s"
+    
+    st.success("🟢 **SERVER IS RUNNING**")
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown("### 📍 Server Configuration")
+        st.text(f"📂 Monitoring: {st.session_state.watch_folder}")
+        st.text(f"🔌 WebSocket Port: {port}")
+        st.text(f"⏱️ Uptime: {uptime_text}")
+    
+    with col2:
+        st.markdown("### 🔌 Client Connection URLs")
+        st.code(f"ws://127.0.0.1:{port}", language="text")
+        st.caption("☝️ Use this for local machine")
+        st.code(f"ws://{local_ip}:{port}", language="text")
+        st.caption("☝️ Use this for remote client on same network")
+    
+    st.info(f"""
+    ✅ **How to Connect with realtime_client.py:**
+    1. Copy the connection URL from above (ws://127.0.0.1:{port} for local or ws://{local_ip}:{port} for network)
+    2. Run: `python realtime_client.py`
+    3. Paste the URL in the input field
+    4. Click "Connect"
+    5. Drop spectra files (.csv, .txt, .xlsx, .spa) in: `{st.session_state.watch_folder}`
+    6. Watch real-time predictions in the client!
     """)
+    
+    # Add a simple test button
+    col_test1, col_test2 = st.columns(2)
+    with col_test1:
+        if st.button("📋 Copy Local URL", use_container_width=True):
+            st.code(f"ws://127.0.0.1:{port}", language="text")
+            st.success("✅ Local URL displayed above - copy it!")
+    
+    with col_test2:
+        if st.button("📋 Copy Network URL", use_container_width=True):
+            st.code(f"ws://{local_ip}:{port}", language="text")
+            st.success("✅ Network URL displayed above - copy it!")
+    
 else:
-    st.warning("🔴 **Server is stopped.** Click 'Start Server' above to begin monitoring.")
+    st.warning("🔴 **SERVER IS STOPPED**")
+    st.error("""
+    ❌ **Server is not running!**
+    
+    To start the server:
+    1. Enter a folder path above (or accept the default)
+    2. (Optional) Upload a trained model and preprocessing pipeline
+    3. Click "▶️ Start Server"
+    
+    Once running, you can connect with `realtime_client.py`
+    """)
+    
+    st.markdown("### ℹ️ Default Settings")
+    st.text(f"Default Port: 8765")
+    st.text(f"Default Folder: C:\\Spectra_Incoming")
+    st.caption("Modify these settings above before starting the server")
