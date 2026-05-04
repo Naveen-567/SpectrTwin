@@ -12,10 +12,6 @@ def init_chatbot_state():
     if "messages" not in st.session_state:
         st.session_state.messages = []
     if "groq_api_key" not in st.session_state:
-        # Try multiple sources for API key:
-        # 1. Streamlit secrets (for Cloud deployment)
-        # 2. Environment variables  
-        # 3. Default empty
         try:
             st.session_state.groq_api_key = st.secrets.get("GROQ_API_KEY", "")
         except:
@@ -41,7 +37,6 @@ def render_chatbot(page_context: str):
     
     init_chatbot_state()
     
-    # CSS to make the Popover float at the bottom right
     st.markdown(
         """
         <style>
@@ -56,7 +51,6 @@ def render_chatbot(page_context: str):
         unsafe_allow_html=True
     )
     
-    # Render the popover (a native Streamlit feature acting as a floating dialog)
     with st.popover("💬 AI Assistant"):
         st.markdown(f"**Current Page:** {page_context}")
         
@@ -79,14 +73,12 @@ def render_chatbot(page_context: str):
                 st.rerun()
             return
             
-        # Display chat messages with a specific height to keep the popover tidy
         chat_container = st.container(height=400)
         with chat_container:
             for msg in st.session_state.messages:
                 with st.chat_message(msg["role"]):
                     st.markdown(msg["content"])
                     
-        # Input for the user
         prompt = st.chat_input("Ask a question about this step...")
         
         if prompt:
@@ -105,13 +97,12 @@ def render_chatbot(page_context: str):
                     f"If they ask about preprocessing, PCA, PLS, or Raman/FTIR spectroscopy, answer as an expert."
                 )
                 
-                # Prepare message history for the API
                 api_messages = [{"role": "system", "content": system_prompt}]
                 for m in st.session_state.messages:
                     api_messages.append({"role": m["role"], "content": m["content"]})
                     
                 completion = client.chat.completions.create(
-                    model="llama-3.1-8b-instant",  # Updated to the new active model
+                    model="llama-3.1-8b-instant",
                     messages=api_messages,
                     temperature=0.7,
                     max_tokens=1024,
@@ -119,8 +110,7 @@ def render_chatbot(page_context: str):
                 
                 response_text = completion.choices[0].message.content
                 st.session_state.messages.append({"role": "assistant", "content": response_text})
-                st.rerun()  # Rerun to correctly display the updated conversation in the container
+                st.rerun()
             except Exception as e:
                 st.error(f"Error communicating with Groq: {str(e)}")
-                # Pop the user message if it failed so they can try again.
                 st.session_state.messages.pop()

@@ -21,13 +21,12 @@ class RealTimeSpectraClient:
         self.ws_loop = None
         self.connected = False
         self.data_queue = queue.Queue()
-        self.log_data = [] # Store logs if user wants to save
+        self.log_data = []
         
         self._build_ui()
         self.root.after(100, self.process_queue)
         
     def _build_ui(self):
-        # Top Frame for Controls
         control_frame = ttk.Frame(self.root, padding="10")
         control_frame.pack(fill=tk.X, side=tk.TOP)
         
@@ -50,7 +49,6 @@ class RealTimeSpectraClient:
         self.status_lbl = ttk.Label(control_frame, text="Disconnected", foreground="red")
         self.status_lbl.pack(side=tk.RIGHT, padx=15)
         
-        # Middle Frame for Plot
         self.plot_frame = ttk.Frame(self.root)
         self.plot_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
         
@@ -133,7 +131,6 @@ class RealTimeSpectraClient:
         prediction = payload.get("prediction", "N/A")
         filename = payload.get("filename", "Unknown")
         
-        # Log it locally
         log_entry = {
             "timestamp": datetime.fromtimestamp(payload.get("timestamp", time.time())).strftime('%Y-%m-%d %H:%M:%S'),
             "filename": filename,
@@ -141,23 +138,18 @@ class RealTimeSpectraClient:
         }
         self.log_data.append(log_entry)
         
-        # Real-time Auto-saving
         if self.auto_save_var.get() and self.auto_save_file:
             try:
-                # Append to file simply
                 is_csv = self.auto_save_file.endswith(".csv")
                 sep = "," if is_csv else "\t"
-                # write header if file is new
                 write_header = not os.path.exists(self.auto_save_file)
                 pd.DataFrame([log_entry]).to_csv(self.auto_save_file, mode='a', header=write_header, index=False, sep=sep)
             except Exception as e:
                 print("Autosave error:", e)
 
-        # Update text
         self.filename_lbl.config(text=f"Last File: {filename}")
         self.pred_lbl.config(text=f"Prediction: {prediction}")
         
-        # Update Plot
         if spectra:
             self.line.set_xdata(range(len(spectra)))
             self.line.set_ydata(spectra)

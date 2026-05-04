@@ -19,21 +19,17 @@ class DimensionalityReduction:
         self.y_train = y_train
         self.y_test = y_test
         
-        # Transformation components
         self.scaler = None
         self.reducer = None
         self.feature_names = None
         self.explained_variance_ratio_ = None
         
-        # Store scaled versions
         self.X_train_scaled = None
         self.X_test_scaled = None
         
-        # Store transformed versions
         self.X_train_reduced = None
         self.X_test_reduced = None
         
-        # Validate input data
         self._validate_data()
         
     def _validate_data(self):
@@ -70,7 +66,6 @@ class DimensionalityReduction:
     def pca_analysis(self, method="variance", n_components=None, variance_threshold=0.95, use_scaled=True):
         """Enhanced PCA with multiple selection criteria"""
         
-        # Choose data source
         X_train_data = self.X_train_scaled if use_scaled and self.X_train_scaled is not None else self.X_train
         X_test_data = self.X_test_scaled if use_scaled and self.X_test_scaled is not None else self.X_test
         
@@ -87,10 +82,9 @@ class DimensionalityReduction:
             pca = PCA()
             pca.fit(X_train_data)
             
-            # Calculate differences to find elbow
             variance_ratios = pca.explained_variance_ratio_
             diffs = np.diff(variance_ratios)
-            n_components = np.argmin(diffs) + 2  # +2 because of diff and 0-indexing
+            n_components = np.argmin(diffs) + 2
             
             st.write(f"Elbow method selected {n_components} components")
             
@@ -98,7 +92,6 @@ class DimensionalityReduction:
             if n_components is None:
                 n_components = min(10, X_train_data.shape[1])
         
-        # Apply PCA
         self.reducer = PCA(n_components=n_components)
         self.X_train_reduced = self.reducer.fit_transform(X_train_data)
         self.X_test_reduced = self.reducer.transform(X_test_data)
@@ -113,7 +106,6 @@ class DimensionalityReduction:
         if self.y_train is None and method in ['selectkbest', 'rfe', 'model_based']:
             raise ValueError(f"y_train is required for {method} method")
         
-        # Choose data source
         X_train_data = self.X_train_scaled if use_scaled and self.X_train_scaled is not None else self.X_train
         X_test_data = self.X_test_scaled if use_scaled and self.X_test_scaled is not None else self.X_test
         
@@ -158,14 +150,12 @@ class DimensionalityReduction:
             
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 5))
         
-        # Individual explained variance
         ax1.bar(range(1, len(self.explained_variance_ratio_) + 1), 
                 self.explained_variance_ratio_)
         ax1.set_xlabel('Principal Component')
         ax1.set_ylabel('Explained Variance Ratio')
         ax1.set_title('Individual Explained Variance')
         
-        # Cumulative explained variance
         cumsum_variance = np.cumsum(self.explained_variance_ratio_)
         ax2.plot(range(1, len(cumsum_variance) + 1), cumsum_variance, 'bo-')
         ax2.axhline(y=0.95, color='r', linestyle='--', label='95% threshold')
@@ -275,13 +265,10 @@ class DimensionalityReduction:
             return None
             
         if hasattr(self.reducer, 'scores_'):
-            # For SelectKBest
             return self.reducer.scores_
         elif hasattr(self.reducer, 'ranking_'):
-            # For RFE
             return self.reducer.ranking_
         elif hasattr(self.reducer, 'estimator_') and hasattr(self.reducer.estimator_, 'feature_importances_'):
-            # For SelectFromModel with tree-based models
             return self.reducer.estimator_.feature_importances_
         else:
             st.info("Feature importance not available for this method")

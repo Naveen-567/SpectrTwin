@@ -7,7 +7,6 @@ st.set_page_config(
     layout="wide"
 )
 
-# Display logo at the top
 logo_path = os.path.join(os.path.dirname(__file__), "Logo", "Spectra.png")
 if os.path.exists(logo_path):
     col_logo = st.columns([1, 1, 1])[1]
@@ -27,7 +26,6 @@ if 'user_name' not in st.session_state or st.session_state.user_name == "":
         else:
             st.error("Please enter your name")
 else:
-    # Minimal Centered Hero Section
     st.markdown(f"<h1 style='text-align: center;'>SpectraTwin</h1>", unsafe_allow_html=True)
     st.markdown(f"<h4 style='text-align: center; color: #6e6e73; margin-bottom: 2rem;'>Welcome, {st.session_state.user_name}!</h4>", unsafe_allow_html=True)
 
@@ -38,18 +36,17 @@ else:
     
     st.write("---")
 
-    # Clean, concise 2-column layout for features
-    st.subheader("🛠️ Core Capabilities")
+    st.subheader("Core Capabilities")
     col1, col2 = st.columns(2, gap="large")
 
     with col1:
         st.markdown("""
-        #### 📥 Smart Intake & Preprocessing
+        #### Smart Intake & Preprocessing
         - **Robust Validation**: Early shape, type, and outlier detection.
         - **Data Integrity**: Target selection and safe leak-free train-test splits.
         - **Modality Support**: Optimized presets for FTIR, Raman, NIR, and Mass Spec.
         
-        #### 🧹 Noise & Artifact Control
+        #### Noise & Artifact Control
         - **Denoising**: Wavelet denoising and peak-preserving smoothing.
         - **Correction**: Powerful baseline corrections and scatter normalization.
         - **Feature Tuning**: OPLS and PCA for targeted covariance reduction.
@@ -57,12 +54,12 @@ else:
         
     with col2:
         st.markdown("""
-        #### 🔄 Reproducible Pipelines
+        #### Reproducible Pipelines
         - **Tracking**: Complete preprocessing history and pipeline rollbacks.
         - **Augmentation**: Physics-preserving data generation.
         - **Transparency**: No hidden transformations or stale states.
 
-        #### ⚡ Guided vs Automated
+        #### Guided vs Automated
         - **Guided**: Step-by-step interactive workflow with live diagnostics (Steps 00-07).
         - **Automated**: One-click end-to-end processing (Step 08).
         - **Deployment**: Save manifests and predict safely with drift checks.
@@ -70,8 +67,7 @@ else:
 
     st.write("---")
 
-    # Emphasize the single click pipeline as a Call-To-Action
-    st.markdown("### 🚀 Quick Start: One-Click Pipeline")
+    st.markdown("### Quick Start: One-Click Pipeline")
     st.success(
         "Want to skip the manual setup? Upload your data, pick your spectral type, and let the system handle **everything** "
         "(preprocessing, reduction, augmentation, and model training). \n\n"
@@ -82,7 +78,6 @@ with st.sidebar:
     st.markdown("---")
     st.markdown("💡 **Powered by Spectroscopy AI**")
 
-# Safely import and render chatbot
 try:
     from chatbot import render_chatbot
     render_chatbot("Home Page")

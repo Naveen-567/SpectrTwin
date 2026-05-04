@@ -21,7 +21,6 @@ class SpectralData(Sequence):
         import pandas as pd
 
         if file is None:
-            # empty initializer if you want to populate the values yourself.
             self._wav_raw = [0]
             self._spc_raw = [0]
             self.war = [0]
@@ -32,12 +31,10 @@ class SpectralData(Sequence):
             self.tf_history = []
 
         else:
-            # initialize temporary arrays
             store_spc = []
             self.file_source = []
             self.tf_history = []
 
-            # start with first file
             if isinstance(file, str):
                 spc = self.getDataFromFile(file)
             else:
@@ -52,8 +49,6 @@ class SpectralData(Sequence):
 
             combined = pd.concat(store_spc, axis=0, ignore_index=True)
             combined.sort_index(axis=1, inplace=True)
-
-            # opposite missing values, then it will combine those columns into one with the mean abscissa value
             for ii in range(1, len(combined.columns) - 1):
                 before = combined.columns[ii] - combined.columns[ii - 1]
                 after = combined.columns[ii + 1] - combined.columns[ii]
@@ -88,7 +83,6 @@ class SpectralData(Sequence):
 
     def __getitem__(self, item):
         temp = SpectralData()
-        # user requests one specific spectrum
         if isinstance(item, int):
             temp.spc = self.spc.iloc[item]
             temp.wav = self.wav
@@ -98,9 +92,7 @@ class SpectralData(Sequence):
             temp._wav_raw = self._wav_raw
             temp.tf_history = self.tf_history
             temp.shape = (1, self.shape[1])
-        # user requests multiple spectra as a slice
         elif isinstance(item, slice):
-            # What does this do
             # start, stop, step = item.indices(len(self))
             temp.spc = self.spc.iloc[item]
             temp.wav = self.wav
@@ -110,11 +102,8 @@ class SpectralData(Sequence):
             temp._wav_raw = self._wav_raw
             temp.tf_history = self.tf_history
             temp.shape = temp.spc.shape
-        # user requests multiple spectra as list
         elif isinstance(item, list):
-            # boolean indexing
             if len(item) == self.shape[0] & all(isinstance(x, bool) for x in item):
-                # boolean indexing
                 temp.spc = self.spc.loc[item]
                 temp.wav = self.wav
                 temp.war = self.war.loc[item]
@@ -124,7 +113,6 @@ class SpectralData(Sequence):
                 temp.tf_history = self.tf_history
                 temp.shape = temp.spc.shape
             else:
-                # positional indexing
                 temp.spc = self.spc.iloc[item]
                 temp.wav = self.wav
                 temp.war = self.war.iloc[item]
@@ -172,7 +160,6 @@ class SpectralData(Sequence):
         """
         import os
         ext = os.path.splitext(file)[-1].lower()
-        # go through decision tree to get correct import function
         if ext == '.txt':
             spc = self.readTextFile(file)
         elif ext == ".spc":
@@ -189,7 +176,6 @@ class SpectralData(Sequence):
 
 
 
-        # this is to be able to later realign the spectra to the source file
         self.file_source = self.file_source + [os.path.split(file)[1] for x in range(spc.shape[0])]
 
         return spc
@@ -226,13 +212,11 @@ class SpectralData(Sequence):
 
         raw = pd.read_csv(file, delimiter=dialect.delimiter, header=head_col)
 
-        # assuming that there are more data points than spectra, make row-wise if more rows than columns
         if raw.shape[0] > raw.shape[1]:
             raw = raw.set_index(raw.columns[0]).transpose()
         else:
             raw = raw.transpose().set_index(raw.columns[0]).transpose()
 
-        # Ensure column names are numeric floats for spectral axis operations
         try:
             raw.columns = raw.columns.astype(float)
         except (ValueError, TypeError):
@@ -259,14 +243,11 @@ class SpectralData(Sequence):
         """
         import numpy as np
         data = np.loadtxt(file, delimiter=',')
-        # assuming that there are more data points than spectra, make columnwise
         if data.shape[0] < data.shape[1]:
             data = data.transpose()
 
         wav = data[:, 0]
         spc = data[:, 1:]
-
-        # return squeezed spc in case only 1D
         return wav, np.squeeze(spc)
 
     def readSPCFile(self, file):
@@ -287,16 +268,12 @@ class SpectralData(Sequence):
 
         f = spc_spectra.File(file)
 
-        # we can use the position of the '-' to figure out how to handle the x and y
         pos = f.dat_fmt.find('-')
         if pos == 0:
-            # code is of type -xy, assume all have the same wav
             wav = f.sub[0].x
         elif pos == 1:
-            # code is of type -xy
             wav = f.x
         elif pos == 2:
-            # code is of type gx-y
             wav = f.x
 
         temp = []
@@ -317,7 +294,6 @@ class SpectralData(Sequence):
         import pandas as pd
         data = pd.read_excel(file)
         col_names = data.columns.astype(str)
-        # Remove all columns containing y (case-insensitive) in their name
         cols_to_drop = [col for col in col_names if 'y' in col.lower()]
         data = data.drop(columns=cols_to_drop)
         data.columns = data.columns.astype(float)
@@ -393,10 +369,7 @@ class SpectralData(Sequence):
         self.tf_history.append(['rolling', {'window': window}])
 
         self.spc = self.spc.transpose()
-        # first perform the rolling window smooth
         self.spc = self.spc.rolling(window).mean()
-
-        # use the NANs to cut the wav and spc matrices
         self.wav = self.wav[self.spc.iloc[:, 0].notna()]
         self.spc = self.spc.dropna()
 

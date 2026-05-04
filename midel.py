@@ -378,14 +378,12 @@ class Models:
     def GaussianProcess_regression(self, X_train, X_test, y_train, y_test):
         st.subheader("Gaussian Process Regressor Settings")
 
-        # Kernel selection
         kernel_option = st.selectbox(
             "Kernel",
             ["RBF", "Matern", "RationalQuadratic", "DotProduct", "WhiteKernel"],
             index=0
         )
 
-        # Map selection to actual kernel object
         kernel_map = {
             "RBF": RBF(),
             "Matern": Matern(nu=1.5),
@@ -395,7 +393,6 @@ class Models:
         }
         kernel = kernel_map[kernel_option]
 
-        # Hyperparameters
         col1, col2, col3 = st.columns(3)
 
         with col1:
@@ -410,7 +407,6 @@ class Models:
         normalize_y = st.checkbox("Normalize y", value=False)
         copy_X_train = st.checkbox("Copy X_train", value=True)
 
-        # Instantiate and fit model
         model = GaussianProcessRegressor(
             kernel=kernel,
             alpha=alpha,
@@ -981,7 +977,6 @@ class optuna_Model:
 
         model.fit(X_train, y_train)
 
-        # Evaluate on train and test
         train_preds = model.predict(X_train)
         test_preds = model.predict(X_test)
 

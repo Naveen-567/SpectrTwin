@@ -13,7 +13,6 @@ from scipy.stats import qmc
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
 
-# --- Settings ---
 mpl.rcParams.update({
     'font.family': 'serif',
     'font.serif': ['Times New Roman'],
@@ -70,7 +69,7 @@ X_pool, X_test, y_pool, y_test = train_test_split(X, y, test_size=0.2, random_st
 fractions = np.linspace(0.1, 1.0, 10)
 results = []
 models_data = {}
-all_plot_points = []  # Added to store the exact R2 scatter plot points
+all_plot_points = []
 
 for frac in fractions:
     n_samples = max(10, int(len(y_pool) * frac))
@@ -92,7 +91,6 @@ for frac in fractions:
     rmse_train = np.sqrt(mean_squared_error(y_train, pred_train))
     rmse_test = np.sqrt(mean_squared_error(y_test, pred_test))
     
-    # Store aggregate metric results
     results.append({
         'Fraction': frac * 100,
         'Samples_Used': n_samples,
@@ -102,7 +100,6 @@ for frac in fractions:
         'Test_RMSE': rmse_test
     })
     
-    # Store raw values for scatter plots tracking
     for r, p in zip(y_train, pred_train):
         all_plot_points.append({'Fraction_Used': int(frac*100), 'Samples_Used': n_samples, 'Set': 'Train', 'Reference': r, 'Predicted': p})
     for r, p in zip(y_test, pred_test):
@@ -119,7 +116,6 @@ metrics_excel_path = os.path.join(DATA_DIR, "Performance_Metrics.xlsx")
 res_df.to_excel(metrics_excel_path, index=False)
 print(f"Metrics saved to {metrics_excel_path}")
 
-# Export the raw scatter plot points data
 scatter_df = pd.DataFrame(all_plot_points)
 scatter_excel_path = os.path.join(DATA_DIR, "Raw_Scatter_Values.xlsx")
 scatter_df.to_excel(scatter_excel_path, index=False)
@@ -127,7 +123,6 @@ print(f"Raw scatter plot values saved to {scatter_excel_path}")
 
 print("3. Generating Plots...")
 
-# --- Plot 1: Learning Curve ---
 fig, ax = plt.subplots(figsize=(8, 6))
 ax.plot(res_df['Samples_Used'], res_df['Train_R2'], marker='o', linewidth=2, color='#1f77b4', label='Train R²')
 ax.plot(res_df['Samples_Used'], res_df['Test_R2'], marker='D', linewidth=2, color='#2ca02c', label='Test R²')
@@ -144,7 +139,6 @@ curve_path = os.path.join(DATA_DIR, "Learning_Curve.png")
 plt.savefig(curve_path, dpi=600)
 plt.close()
 
-# --- Plot 2: Scatter Grids for ALL Cases ---
 fig, axes = plt.subplots(2, 5, figsize=(25, 10))
 axes = axes.flatten()
 
@@ -155,7 +149,6 @@ for i, frac in enumerate(range(10, 110, 10)):
     ax.scatter(data['y_test'], data['pred_test'], c='#d62728', edgecolors='None', alpha=0.6, marker='s', label=f"Test R² = {data['r2_te']:.2f}")
     ax.plot([y.min(), y.max()], [y.min(), y.max()], 'k--', lw=1.5)
     
-    # Internal Text identifier replacing generic percentages with Sample counts!
     ax.text(0.5, 0.1, f"{data['samples']} Samples", transform=ax.transAxes, ha='center', va='center', weight='bold', size=14)
     
     ax.set_xlabel('Reference Concentration' if i >= 5 else "")
@@ -171,7 +164,6 @@ scat_path = os.path.join(DATA_DIR, "R2_Comparisons.png")
 plt.savefig(scat_path, dpi=600)
 plt.close()
 
-# --- Plot 3: 3-Case Explainable Normalized Spider Plot ---
 spider_labels = [
     'Train Confidence\n(Train R²)', 
     'Interpolation Strength\n(Test R²)', 
@@ -185,8 +177,6 @@ max_rm_te = res_df['Test_RMSE'].max()
 stats = {}
 for frac in [10, 50, 100]:
     d = models_data[frac]
-    # R2 is inherently 0-1.
-    # We normalize RMSE so higher visually = lower physical error (better)
     norm_rm_tr = max(0, 1.0 - (d['rm_tr'] / max_rm_tr))
     norm_rm_te = max(0, 1.0 - (d['rm_te'] / max_rm_te))
     
@@ -218,7 +208,6 @@ for frac in [10, 50, 100]:
     ax.plot(angles, stats[frac], color=colors[frac], linewidth=3, linestyle='solid', marker='o', label=names[frac])
     ax.fill(angles, stats[frac], color=colors[frac], alpha=0.1)
 
-# Annotate logic explaining the plot
 plt.figtext(0.5, 0.05, "*All metrics mapped scale outwards. Visual maximum area represents standard absolute optimization.", 
             ha="center", fontsize=10, style='italic', color='gray')
 
