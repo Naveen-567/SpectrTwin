@@ -105,41 +105,32 @@ streamlit run streamlit_full_pipeline.py
 streamlit run streamlit_optimized_pipeline.py
 ```
 
-#### Real-Time Data Transfer Client
-**Note:** `realtime_client.py` is a **separate standalone application** designed to run on a different system (instrument/data source) for real-time spectral data transfer.
+#### Real-Time Data Transfer (LOCAL ONLY)
+**⚠️ DO NOT use through Streamlit Cloud - must be run locally**
 
-**Setup and Usage:**
-1. Install dependencies on the data source system:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-2. Configure the client:
-   - Edit `realtime_client.py` with your:
-     - Server IP/hostname (where SpectraTwin app is running)
-     - Port configuration
-     - Data source parameters
-
-3. Run on the data source system:
-   ```bash
-   python realtime_client.py
-   ```
-
-4. Access real-time data in SpectraTwin via **09_Real_Time_Transfer** page
-
-**Architecture:**
+**Server Setup** (on main SpectraTwin system):
+```bash
+streamlit run Home.py
+# Then navigate to page "09_Real_Time_Transfer"
+# Click "▶️ Start Server" button
+# Copy the WebSocket URL shown on the page
 ```
-Data Source System        →    SpectraTwin System
-(realtime_client.py)           (Main App)
-  ↓                               ↓
- Instrument/Device          Streamlit Interface
-  ↓                               ↓
-Network Connection          View Live Data
+
+**Client Setup** (on data source/instrument system):
+```bash
+python realtime_client.py
+# Paste the WebSocket URL and click Connect
 ```
+
+**See "Real-Time Features" section above for complete setup guide.**
 
 The application will open in your default web browser at `http://localhost:8501`
 
 ### Deploy on Streamlit Cloud
+
+**Note:** Most features work on Streamlit Cloud, **EXCEPT** the real-time data transfer feature which requires local network access and persistent WebSocket connections.
+
+**For real-time features:** Use the local setup (see "Running the Application" section above).
 
 **Follow the complete deployment guide:** [DEPLOYMENT.md](DEPLOYMENT.md)
 
@@ -190,64 +181,166 @@ See full list in `requirements.txt`
 
 ## Real-Time Features
 
-The application supports real-time spectral data transfer through a client-server architecture:
+### ⚠️ IMPORTANT: Real-Time Transfer is for LOCAL use only
 
-### Real-Time Client (`realtime_client.py`)
-**Important:** This is a **separate standalone application** that runs on your **data source system** (instrument/sensor system), NOT on the SpectraTwin main app system.
+The **real-time data transfer feature** is designed to run on your **local system or internal network**, NOT through Streamlit Cloud. 
 
-**Features:**
-- Streams spectral data in real-time to SpectraTwin server
-- Runs independently on data acquisition hardware
-- Supports continuous data monitoring
-- Configurable network endpoints
+**Why?**
+- Requires persistent network connections and background processes
+- Streamlit Cloud sessions timeout and restart periodically
+- File system access and direct network access not available on Cloud
+- WebSocket connections need to remain open indefinitely
 
-**Usage:**
-1. Run on your data source/instrument system:
-   ```bash
-   python realtime_client.py
-   ```
+---
 
-2. Configure connection parameters:
-   - Server IP: where SpectraTwin is running
-   - Port: configured in both client and server
-   - Data format: depends on your instrument
+### Real-Time Data Transfer Setup
 
-3. Monitor incoming data in SpectraTwin via **Page 09: Real-Time Transfer**
-
-### Real-Time Processing (`09_Real_Time_Transfer.py`)
-- Web interface for viewing live spectral data
-- Real-time visualization and analysis
-- Data logging and archival
-- Alert/notification system
-
-**System Architecture:**
+#### Architecture Overview:
 ```
-┌─────────────────────────────┐
-│  Data Source System         │
-│  (Separate Computer)        │
-│                             │
-│  • realtime_client.py       │
-│  • FTIR/Raman/NIR Device    │
-│  • Sensors/Instruments      │
-└────────────────┬────────────┘
-                 │ Network Connection
-                 │ (TCP/IP or other)
-                 ↓
-┌─────────────────────────────┐
-│  SpectraTwin Main System    │
-│  (Streamlit App)            │
-│                             │
-│  • 09_Real_Time_Transfer.py │
-│  • Live Dashboard           │
-│  • Data Analysis            │
-└─────────────────────────────┘
+┌──────────────────────────────────────┐
+│  INSTRUMENT/DATA SOURCE SYSTEM       │
+│  (Local PC connected to device)      │
+│                                      │
+│  ├─ Run: realtime_client.py          │
+│  ├─ Connected to: FTIR/Raman/etc.    │
+│  └─ Sends data to SpectraTwin server │
+└─────────────────┬────────────────────┘
+                  │ 
+         Network Connection
+         (LAN or Internet)
+                  │
+                  ↓
+┌──────────────────────────────────────┐
+│  SPECTRATWIN SERVER (LOCAL or SELF-HOSTED) │
+│                                      │
+│  ├─ Run: streamlit run Home.py       │
+│  ├─ Open: Page 09_Real_Time_Transfer │
+│  ├─ Click: "▶️ Start Server"          │
+│  └─ View: Live predictions & data    │
+└──────────────────────────────────────┘
 ```
 
-## Troubleshooting
+---
 
-**Real-Time Connection Issues:**
-- Verify network connectivity between systems
-- Check firewall settings allow data transfer
+### Step-by-Step Setup
+
+#### 1. On the SpectraTwin Server System (Main Application):
+
+```bash
+# Navigate to project directory
+cd /path/to/SpectraTwin
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Start the main app
+streamlit run Home.py
+```
+
+Then:
+- Open `http://localhost:8501` in your browser
+- Navigate to **"09_Real_Time_Transfer"** page
+- Enter the folder path to monitor (e.g., `C:\Spectra_Data`)
+- **(Optional)** Upload a trained model for real-time predictions
+- Click **"▶️ Start Server"** button
+- **Copy the WebSocket URL** shown on the page (e.g., `ws://192.168.1.100:8765`)
+
+#### 2. On the Data Source/Instrument System:
+
+```bash
+# Navigate to project directory
+cd /path/to/SpectraTwin
+
+# Install dependencies (same as server)
+pip install -r requirements.txt
+
+# Run the real-time client
+python realtime_client.py
+```
+
+Then:
+- A GUI window will open showing the client interface
+- **Paste the WebSocket URL** from Step 1 in the input field
+- Click **"Connect"** button
+- Wait for the status to show "✅ Connected"
+- Drop spectra files (`.csv`, `.txt`, `.xlsx`) in the monitored folder
+- Watch real-time predictions appear in the client!
+
+---
+
+### Real-Time Client Features
+
+**`realtime_client.py` provides:**
+- Persistent network connection to SpectraTwin server
+- Real-time spectral data visualization
+- Live prediction display
+- Data logging to file (CSV or TXT)
+- Auto-save functionality
+- Connection status monitoring
+
+**Usage Example:**
+```bash
+# Terminal on data source system
+python realtime_client.py
+```
+
+---
+
+### Deployment Options
+
+| Option | Use Case | Notes |
+|--------|----------|-------|
+| **Local (Same PC)** | Testing, small setup | Simplest, `ws://127.0.0.1:8765` |
+| **Local Network** | Lab setup, multiple instruments | Same network, `ws://192.168.x.x:8765` |
+| **Self-Hosted Server** | Production use, multiple clients | VPS or dedicated server |
+| **Streamlit Cloud** | ❌ NOT SUPPORTED | Session timeout, no persistent WebSocket |
+
+---
+
+### Network Configuration
+
+#### For Local Network Access:
+1. Find server IP: `ipconfig` (Windows) or `ifconfig` (Linux/Mac)
+2. Use in client: `ws://SERVER_IP:8765` (replace SERVER_IP)
+3. Ensure firewall allows port 8765
+
+#### For Remote Access (across internet):
+1. Set up port forwarding on router
+2. Use: `ws://YOUR_PUBLIC_IP:8765`
+3. Consider using `wss://` (WebSocket Secure) for security
+
+---
+
+### Troubleshooting Real-Time Connection
+
+**Connection Refused?**
+- [ ] Server is started on SpectraTwin page (look for green checkmark)
+- [ ] Server and client are on same/accessible network
+- [ ] Port 8765 is not blocked by firewall
+- [ ] Correct URL is pasted in client (`ws://...` not `http://...`)
+
+**No Data Received?**
+- [ ] Server folder exists and is accessible
+- [ ] File being dropped has correct extension (`.csv`, `.txt`, `.xlsx`, `.spa`)
+- [ ] Model file is loaded (if predictions expected)
+
+**Connection Drops?**
+- [ ] Check network stability
+- [ ] Firewall not blocking WebSocket traffic
+- [ ] Reconnect using the same client interface
+
+---
+
+### Real-Time Processing Features
+
+**On SpectraTwin Server (09_Real_Time_Transfer page):**
+- Folder monitoring with automatic file detection
+- Optional model loading for real-time predictions
+- WebSocket server for broadcasting to multiple clients
+- Live uptime counter and connection details
+- Server start/stop controls
+
+
 - Ensure `realtime_client.py` is running on data source system
 - Check configured IP and port match in both systems
 
