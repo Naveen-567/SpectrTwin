@@ -39,16 +39,19 @@ with col1:
     with f_col2:
         st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
         if st.button("📁 Browse", use_container_width=True):
-            import tkinter as tk
-            from tkinter import filedialog
-            root = tk.Tk()
-            root.wm_attributes("-topmost", True)
-            root.withdraw()
-            chosen_folder = filedialog.askdirectory(parent=root, title="Select folder to watch")
-            root.destroy()
-            if chosen_folder:
-                st.session_state.watch_folder = chosen_folder.replace("/", "\\")
-                st.rerun()
+            try:
+                import tkinter as tk
+                from tkinter import filedialog
+                root = tk.Tk()
+                root.wm_attributes("-topmost", True)
+                root.withdraw()
+                chosen_folder = filedialog.askdirectory(parent=root, title="Select folder to watch")
+                root.destroy()
+                if chosen_folder:
+                    st.session_state.watch_folder = chosen_folder.replace("/", "\\")
+                    st.rerun()
+            except Exception as e:
+                st.warning("📌 File browser unavailable on this system (headless environment). Please type the folder path directly.")
                 
     # Keep session state synced if user manually types in the field
     if watch_folder != st.session_state.watch_folder:
