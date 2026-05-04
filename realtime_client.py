@@ -9,6 +9,7 @@ import threading
 import queue
 import pandas as pd
 import os
+import time
 from datetime import datetime
 
 class RealTimeSpectraClient:
@@ -73,17 +74,25 @@ class RealTimeSpectraClient:
         
     def toggle_connection(self):
         if not self.connected:
-            url = self.ip_entry.get()
+            url = self.ip_entry.get().strip()
+            
+            # Validate URL format
+            if not url.startswith("ws://") and not url.startswith("wss://"):
+                messagebox.showerror("Invalid URL", "URL must start with 'ws://' or 'wss://'")
+                return
+            
             self.ws_thread = threading.Thread(target=self.start_async_loop, args=(url,), daemon=True)
             self.ws_thread.start()
-            self.connect_btn.config(text="Disconnecting...")
+            self.connect_btn.config(text="Connecting...")
             self.connect_btn.state(['disabled'])
+            self.status_lbl.config(text="Connecting...", foreground="orange")
         else:
             if self.ws_loop:
                 self.ws_loop.call_soon_threadsafe(self.ws_loop.stop)
             self.connected = False
             self.status_lbl.config(text="Disconnected", foreground="red")
             self.connect_btn.config(text="Connect")
+            self.connect_btn.state(['!disabled'])
             
     def start_async_loop(self, url):
         self.ws_loop = asyncio.new_event_loop()
@@ -96,14 +105,24 @@ class RealTimeSpectraClient:
     async def listen_to_server(self, url):
         try:
             async with websockets.connect(url) as websocket:
-                self.data_queue.put({"type": "status", "msg": "Connected", "color": "green"})
+                self.data_queue.put({"type": "status", "msg": "✅ Connected", "color": "green"})
                 self.connected = True
                 while True:
                     message = await websocket.recv()
                     data = json.loads(message)
                     self.data_queue.put({"type": "data", "payload": data})
+        except ConnectionRefusedError:
+            self.data_queue.put({"type": "status", "msg": "❌ Connection Refused - Server not running", "color": "red"})
+            self.connected = False
+        except asyncio.TimeoutError:
+            self.data_queue.put({"type": "status", "msg": "❌ Connection Timeout - Check server URL", "color": "red"})
+            self.connected = False
+        except OSError as e:
+            self.data_queue.put({"type": "status", "msg": f"❌ Network Error: {str(e)[:50]}", "color": "red"})
+            self.connected = False
         except Exception as e:
-            self.data_queue.put({"type": "status", "msg": f"Error: {e}", "color": "red"})
+            error_msg = str(e)[:80]  # Truncate long error messages
+            self.data_queue.put({"type": "status", "msg": f"❌ Error: {error_msg}", "color": "red"})
             self.connected = False
             
     def process_queue(self):
@@ -112,7 +131,7 @@ class RealTimeSpectraClient:
                 item = self.data_queue.get_nowait()
                 if item["type"] == "status":
                     self.status_lbl.config(text=item["msg"], foreground=item["color"])
-                    if item["msg"] == "Connected":
+                    if "Connected" in item["msg"]:
                         self.connect_btn.config(text="Disconnect")
                         self.connect_btn.state(['!disabled'])
                     else:
